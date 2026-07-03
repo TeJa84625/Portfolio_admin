@@ -10,7 +10,7 @@ export function generateHTMLString(data) {
     let joinProjectBtn = "";
     if (data.projectStatus !== "Completed") {
         joinProjectBtn = `
-                <a href="join_project.html?projectName=${encodeURIComponent(data.projectName)}&projectId=${encodeURIComponent(data.projectId)}" class="action-button join-project-button">
+                <a href="/join_project.html?projectName=${encodeURIComponent(data.projectName)}&projectId=${encodeURIComponent(data.projectId)}" class="action-button join-project-button">
                     Join This Project
                 </a>`;
     }
@@ -28,12 +28,27 @@ export function generateHTMLString(data) {
     const escapeHtml = (unsafe) => {
         if (!unsafe) return '';
         return unsafe
-             .replace(/&/g, "&amp;")
-             .replace(/</g, "&lt;")
-             .replace(/>/g, "&gt;")
-             .replace(/"/g, "&quot;")
-             .replace(/'/g, "&#039;");
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
     };
+
+    const summaryData = {
+        projectId: data.projectId, // Dynamically maps the unique ID
+        name: data.projectName,
+        image: data.imageUrls && data.imageUrls.length > 0 ? data.imageUrls[0] : null,
+        status: data.projectStatus,
+        desc: data.shortDescription,
+        tags: data.tags || [], // Falls back to an empty array if undefined
+        technologies: data.technologies || [], // Falls back to an empty array if undefined
+        date: data.date || new Date().toISOString().split('T')[0], // Falls back to today's date format
+        buttonLabel: data.buttonLabel || "Visit Website" // Falls back to a default label
+    };
+
+    const summaryJson = JSON.stringify(summaryData, null, 2);
+    const fullJson = JSON.stringify(data, null, 2);
 
     return `<!DOCTYPE html>
 <html lang="en">
@@ -52,7 +67,7 @@ export function generateHTMLString(data) {
     <meta property="og:image" content="${data.imageUrls.length > 0 ? data.imageUrls[0] : 'https://tejagavara.vercel.app/images/profile.png'}">
     <meta property="og:type" content="article">
     ${data.uploadDate ? `<meta property="article:published_time" content="${data.uploadDate}">` : ''}
-    <meta property="og:url" content="https://tejagavara.vercel.app/${data.projectId}.html">
+    <meta property="og:url" content="https://tejagavara.vercel.app/projects/${data.projectId}.html">
 
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Teja Gavara | ${data.projectName}">
@@ -115,7 +130,7 @@ export function generateHTMLString(data) {
 
     <header class="bg-white shadow-md py-4 px-6 md:px-10 lg:px-16 flex justify-between items-center rounded-b-lg sticky top-0 z-50 dark:bg-gray-800 dark:text-white">
         <div class="flex items-center">
-            <a href="index.html" class="text-2xl font-bold text-gray-800 hover:text-blue-600 dark:text-white dark:hover:text-blue-400 transition duration-300 ease-in-out">
+            <a href="/index.html" class="text-2xl font-bold text-gray-800 hover:text-blue-600 dark:text-white dark:hover:text-blue-400 transition duration-300 ease-in-out">
                 <span class="text-blue-600">G</span>TEJA
             </a>
         </div>
@@ -126,20 +141,20 @@ export function generateHTMLString(data) {
         </button>
         <nav id="menu" class="hidden md:flex">
             <ul class="flex flex-col md:flex-row md:space-x-8">
-                <li><a href="index.html" class="block text-gray-700 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 font-medium transition duration-300 ease-in-out px-3 py-2 rounded-md">Home</a></li>
-                <li><a href="projects.html" class="block text-gray-700 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 font-medium transition duration-300 ease-in-out px-3 py-2 rounded-md">Projects</a></li>
-                <li><a href="about.html" class="block text-gray-700 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 font-medium transition duration-300 ease-in-out px-3 py-2 rounded-md">About</a></li>
-                <li><a href="contact.html" class="block text-gray-700 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 font-medium transition duration-300 ease-in-out px-3 py-2 rounded-md">Contact</a></li>
+                <li><a href="/index.html" class="block text-gray-700 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 font-medium transition duration-300 ease-in-out px-3 py-2 rounded-md">Home</a></li>
+                <li><a href="/projects.html" class="block text-gray-700 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 font-medium transition duration-300 ease-in-out px-3 py-2 rounded-md">Projects</a></li>
+                <li><a href="/about.html" class="block text-gray-700 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 font-medium transition duration-300 ease-in-out px-3 py-2 rounded-md">About</a></li>
+                <li><a href="/contact.html" class="block text-gray-700 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 font-medium transition duration-300 ease-in-out px-3 py-2 rounded-md">Contact</a></li>
             </ul>
         </nav>
     </header>
     
     <nav id="mobile-menu" class="hidden bg-white shadow-md rounded-b-lg md:hidden px-6 py-4 dark:bg-gray-900">
         <ul class="flex flex-col space-y-3">
-            <li><a href="index.html" class="block text-gray-700 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 font-medium px-3 py-2 rounded-md transition duration-300">Home</a></li>
-            <li><a href="projects.html" class="block text-gray-700 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 font-medium px-3 py-2 rounded-md transition duration-300">Projects</a></li>
-            <li><a href="about.html" class="block text-gray-700 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 font-medium px-3 py-2 rounded-md transition duration-300">About</a></li>
-            <li><a href="contact.html" class="block text-gray-700 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 font-medium px-3 py-2 rounded-md transition duration-300">Contact</a></li>
+            <li><a href="/index.html" class="block text-gray-700 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 font-medium px-3 py-2 rounded-md transition duration-300">Home</a></li>
+            <li><a href="/projects.html" class="block text-gray-700 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 font-medium px-3 py-2 rounded-md transition duration-300">Projects</a></li>
+            <li><a href="/about.html" class="block text-gray-700 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 font-medium px-3 py-2 rounded-md transition duration-300">About</a></li>
+            <li><a href="/contact.html" class="block text-gray-700 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 font-medium px-3 py-2 rounded-md transition duration-300">Contact</a></li>
         </ul>
     </nav>
 
@@ -150,7 +165,7 @@ export function generateHTMLString(data) {
 
         <div class="p-0 sm:bg-white sm:p-6 sm:rounded-lg sm:shadow-lg dark:bg-gray-900">
             <div class="flex justify-between items-center mb-6 w-full">
-                <a href="projects.html" class="inline-flex items-center bg-gray-200 hover:bg-gray-300 text-black font-bold py-2 px-4 rounded-md shadow-sm transition duration-300 ease-in-out dark:bg-gray-400">
+                <a href="/projects.html" class="inline-flex items-center bg-gray-200 hover:bg-gray-300 text-black font-bold py-2 px-4 rounded-md shadow-sm transition duration-300 ease-in-out dark:bg-gray-400">
                     <svg class="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6l6 6l1.41-1.41z"></path>
                     </svg>
@@ -250,7 +265,6 @@ export function generateHTMLString(data) {
 
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js">${scriptEnd}
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js">${scriptEnd}
-    <script src="project_detail.js">${scriptEnd}
     <script src="statistics.js">${scriptEnd}
 
     ${scriptStart}
@@ -341,72 +355,12 @@ export function generateHTMLString(data) {
         });
     ${scriptEnd}
 
+    <!--
+    ${summaryJson}
+    --------------------------------
+    ${fullJson}
+    -->
+
 </body>
 </html>`;
-}
-
-// --- NEW FUNCTION: TXT Generator ---
-export function generateAssetsText(data) {
-    const summaryData = {
-        name: data.projectName,
-        image: data.imageUrls.length > 0 ? data.imageUrls[0] : null,
-        status: data.projectStatus,
-        desc: data.shortDescription
-    };
-
-    const summaryJson = JSON.stringify(summaryData, null, 2);
-    const fullJson = JSON.stringify(data, null, 2);
-
-    const cardHtml = `<div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl overflow-hidden transform hover:scale-[1.02] transition duration-300 ease-in-out relative cursor-pointer" data-project-id="${data.projectId}" onclick="window.location.href='${data.projectId}.html'">
-    <div class="rounded-lg overflow-hidden shadow-lg bg-white dark:bg-gray-800">
-        <div class="relative">
-            <div class="relative w-full pb-[56.25%] bg-gray-200 dark:bg-gray-700 dark:text-gray-100 text-gray-500 font-bold text-xl overflow-hidden">
-                <div class="absolute inset-0 flex items-center justify-center">
-                    <span class="p-2">${data.projectName}</span>
-                </div>
-                <img src="${data.imageUrls.length > 0 ? data.imageUrls[0] : ''}" alt="${data.projectName} thumbnail" class="absolute inset-0 w-full h-full object-cover opacity-0 transition-opacity duration-500" onload="this.classList.add('opacity-100')" onerror="this.remove()">
-            </div>
-            <div class="absolute top-2 right-2 px-3 py-1 text-xs font-semibold rounded-full shadow-md bg-yellow-500 text-yellow-900 z-10">
-                ${data.projectStatus}
-            </div>
-        </div>
-        <div class="p-4">
-            <h3 class="text-xl font-bold mb-2 truncate text-gray-900 dark:text-white">
-                ${data.projectName}
-            </h3>
-            <p class="text-gray-600 dark:text-gray-400 text-sm mb-4 line-clamp-2">
-                ${data.shortDescription}
-            </p>
-            <div class="flex justify-between items-center text-sm text-gray-500 dark:text-gray-400 mt-2">
-                <div class="flex items-center space-x-1">
-                    <svg class="w-4 h-4 text-blue-500 dark:text-blue-400" fill="currentColor" viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 0 12c2.73 4.39 7 7.5 12 7.5s9.27-3.11 12-7.5c-2.73-4.39-7-7.5-12-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"></path></svg>
-                    <span class="live-views-count">0 Views</span>
-                </div>
-                ${data.buttonLabel !== 'None' ? `
-                <div class="flex items-center space-x-1">
-                    <svg class="w-4 h-4 text-blue-500 dark:text-blue-400" fill="currentColor" viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"></path></svg>
-                    <span class="live-downloads-count">0 ${data.buttonLabel}s</span>
-                </div>` : ''}
-            </div>
-        </div>
-    </div>
-</div>`;
-
-    return `=======================================================
-PROJECT ASSETS FOR: ${data.projectName}
-=======================================================
-
-1. SUMMARY JSON (Paste this array item into projects grid)
--------------------------------------------------------
-${summaryJson}
-
-
-2. FULL PROJECT JSON (Save to re-import into admin panel later)
--------------------------------------------------------
-${fullJson}
-
-
-3. PROJECT CARD HTML (Paste into projects.html page)
--------------------------------------------------------
-${cardHtml}`;
 }

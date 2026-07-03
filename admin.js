@@ -1,4 +1,4 @@
-import { generateHTMLString, generateAssetsText } from './export.js';
+import { generateHTMLString } from './export.js';
 
 // --- Firebase Configuration & Initialization ---
 const firebaseConfig = {
@@ -149,19 +149,6 @@ function performDownload(data) {
     htmlLink.download = data.projectId + '.html';
     htmlLink.click();
     URL.revokeObjectURL(htmlLink.href);
-
-    // 2. Download Text Assets File (JSONs + Template)
-    const txtContent = generateAssetsText(data);
-    const txtBlob = new Blob([txtContent], { type: 'text/plain' });
-    const txtLink = document.createElement('a');
-    txtLink.href = URL.createObjectURL(txtBlob);
-    txtLink.download = data.projectId + '_assets.txt';
-    
-    // Add a tiny delay so the browser doesn't block the second download
-    setTimeout(() => {
-        txtLink.click();
-        URL.revokeObjectURL(txtLink.href);
-    }, 500);
 }
 
 // --- 6. Form Submission (Firebase Logic) ---
