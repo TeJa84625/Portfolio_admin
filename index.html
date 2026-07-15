@@ -10,13 +10,6 @@
 <body class="bg-gray-100 text-gray-900 font-sans">
     <div id="appContainer" class="max-w-4xl mx-auto p-5 hidden">
         <div class="flex justify-between items-center mb-6">
-            <!-- <div class="flex items-center gap-4">
-                <a href="about.html">
-                    <button class="bg-blue-500 hover:bg-blue-700 text-white px-4 py-2 rounded-md">
-                        Edit About
-                    </button>
-                </a>
-            </div> -->
             <div class="flex items-center gap-4">
                 <h3><b>User:</b></h3>
                 <span id="userEmailDisplay" class="text-gray-600 font-medium"></span>
@@ -28,7 +21,8 @@
 
         <h1 id="pageTitle" class="text-4xl text-blue-700 text-center mb-8">Edit Project</h1>
 
-        <div class="flex justify-center mb-6 gap-4">
+        <!-- Updated Button Group -->
+        <div class="flex flex-wrap justify-center mb-6 gap-4">
             <button id="addNewProjectButton"
                 class="bg-blue-500 hover:bg-blue-700 text-white px-6 py-3 rounded-md text-lg">
                 Add New Project
@@ -37,6 +31,22 @@
                 class="bg-blue-500 hover:bg-blue-700 text-white px-6 py-3 rounded-md text-lg">
                 Update Existing Project
             </button>
+            <button id="generateStaticBtn"
+                class="bg-purple-600 hover:bg-purple-800 text-white px-6 py-3 rounded-md text-lg transition-colors shadow-sm">
+                Generate SEO Static HTML
+            </button>
+        </div>
+
+        <!-- NEW: Container for outputting generated static HTML -->
+        <div id="staticHtmlContainer" class="bg-white p-8 rounded-lg shadow-md mb-6 hidden">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-2xl font-semibold text-purple-700">SEO-Optimized Static HTML</h3>
+                <button id="copyStaticHtmlBtn" class="bg-green-500 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-semibold transition-colors">
+                    Copy to Clipboard
+                </button>
+            </div>
+            <p class="text-sm text-gray-600 mb-4">This code is fully optimized for web crawlers, AI search (Schema.org), and screen readers. Paste it directly into your frontend.</p>
+            <textarea id="staticHtmlOutput" rows="16" class="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-md text-gray-800 font-mono text-xs overflow-y-auto focus:outline-none focus:ring-2 focus:ring-purple-500" readonly></textarea>
         </div>
 
         <div id="projectListContainer" class="bg-white p-8 rounded-lg shadow-md mb-6 hidden">
@@ -231,14 +241,19 @@
         const signInBtn = document.getElementById('signInBtn');
         const signOutBtn = document.getElementById('signOutBtn');
         const pageTitle = document.getElementById('pageTitle');
-        const userEmailDisplay = document.getElementById('userEmailDisplay'); // New
+        const userEmailDisplay = document.getElementById('userEmailDisplay');
+
+        // Static Generation Elements
+        const generateStaticBtn = document.getElementById('generateStaticBtn');
+        const staticHtmlContainer = document.getElementById('staticHtmlContainer');
+        const staticHtmlOutput = document.getElementById('staticHtmlOutput');
+        const copyStaticHtmlBtn = document.getElementById('copyStaticHtmlBtn');
 
         let currentMode = 'add';
 
         function createDynamicInput(container, value = '', placeholder = 'Add a new entry') {
             const wrapper = document.createElement('div');
             wrapper.className = 'flex items-center gap-2 entry-wrapper';
-            // Removed maxlength="16" for more flexible input, especially for URLs
             wrapper.innerHTML = `
                 <input type="text" class="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900" placeholder="${placeholder}" value="${value}" required>
                 <button type="button" class="bg-red-500 hover:bg-red-700 text-white px-3 py-2 rounded-md remove-btn">Remove</button>
@@ -299,6 +314,7 @@
                 sponsorsContainer.innerHTML = '';
                 deleteProjectButton.classList.add('hidden');
                 projectListContainer.classList.add('hidden');
+                staticHtmlContainer.classList.add('hidden'); // Hide static view
                 const today = new Date();
                 const year = today.getFullYear();
                 const month = String(today.getMonth() + 1).padStart(2, '0');
@@ -319,6 +335,7 @@
                 sponsorsContainer.innerHTML = '';
                 deleteProjectButton.classList.remove('hidden');
                 projectListContainer.classList.remove('hidden');
+                staticHtmlContainer.classList.add('hidden'); // Hide static view
                 await fetchAndDisplayProjectNames();
                 toggleFieldVisibility();
             }
@@ -346,6 +363,125 @@
             }
         }
 
+        // --- NEW: Generate Static HTML Routine ---
+        async function fetchAndGenerateStaticHtml() {
+            staticHtmlContainer.classList.remove('hidden');
+            staticHtmlOutput.value = 'Connecting to live database and building HTML...';
+            
+            try {
+                const projectsSnapshot = await db.collection("projects").get();
+                if (projectsSnapshot.empty) {
+                    staticHtmlOutput.value = '<!-- No projects found in the database. -->';
+                    return;
+                }
+
+                let html = `<!-- ====================================================================== -->\n`;
+                html += `<!-- SEO-OPTIMIZED STATIC PROJECTS GRID (Auto-Generated)                      -->\n`;
+                html += `<!-- Accessibility: Includes ARIA attributes & structural semantics           -->\n`;
+                html += `<!-- Indexing: Heavily utilizes Schema.org Microdata for AI Search crawlers -->\n`;
+                html += `<!-- ====================================================================== -->\n\n`;
+                html += `<section aria-labelledby="projects-heading" class="projects-section py-10">\n`;
+                html += `    <div id="projectListSpinnerContainer" class="loading-spinner-container flex flex-col items-center justify-center min-h-[200px]" aria-live="polite" style="display: none;">\n`;
+                html += `        <div class="loading-spinner border-4 border-blue-600 border-t-transparent rounded-full w-10 h-10 animate-spin" aria-hidden="true"></div>\n`;
+                html += `        <p class="text-gray-600 dark:text-gray-400 mt-4 font-medium tracking-wide">Syncing live projects...</p>\n`;
+                html += `    </div>\n\n`;
+                html += `    <!-- Grid Container -->\n`;
+                html += `    <div id="projectsGrid" class="projects-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-6" role="list">\n`;
+
+                projectsSnapshot.forEach(doc => {
+                    const data = doc.data();
+                    const title = doc.id || data.projectName || 'Untitled Project';
+                    const desc = data.short_description || data.long_description || 'No description available for this project.';
+                    const img = (data.image_urls && data.image_urls.length > 0) ? data.image_urls[0] : `https://placehold.co/600x400?text=${encodeURIComponent(title)}`;
+                    
+                    const tech = data.technologies || [];
+                    const tags = data.tags || [];
+                    const keywords = [...tech, ...tags];
+                    const urlSlug = encodeURIComponent(title.toLowerCase().replace(/\s+/g, '-'));
+                    
+                    // Basic Schema logic: Guessing application type based on tags
+                    const kwString = keywords.join(' ').toLowerCase();
+                    let schemaType = "https://schema.org/CreativeWork";
+                    if(kwString.includes('html') || kwString.includes('js') || kwString.includes('react') || kwString.includes('web')) schemaType = "https://schema.org/SoftwareApplication";
+                    else if(kwString.includes('iot') || kwString.includes('arduino') || kwString.includes('hardware')) schemaType = "https://schema.org/HardwareSystem";
+
+                    html += `\n        <!-- Project Card: ${title} -->\n`;
+                    html += `        <article class="project-card group bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-2xl transition-all duration-300 flex flex-col justify-between" \n                   itemscope itemtype="${schemaType}" role="listitem">\n`;
+                    html += `            <header>\n`;
+                    if (data.upload_date) html += `                <meta itemprop="datePublished" content="${data.upload_date}">\n`;
+                    if (keywords.length) html += `                <meta itemprop="keywords" content="${keywords.join(', ')}">\n`;
+                    html += `                <figure class="mb-5 overflow-hidden rounded-lg bg-gray-100">\n`;
+                    html += `                    <img itemprop="image" src="${img}" alt="Preview screenshot or mockup of the ${title} project" \n                           class="w-full h-52 object-cover transform group-hover:scale-105 transition-transform duration-500 ease-out" \n                          loading="lazy" onerror="this.src='https://placehold.co/600x400?text=${encodeURIComponent(title)}'">\n`;
+                    html += `                </figure>\n`;
+                    html += `                <h3 itemprop="name" class="text-2xl font-bold mb-3 text-gray-900 dark:text-white leading-tight">\n`;
+                    html += `                    <a href="/project_detail.html?id=${title}" itemprop="url" class="hover:text-blue-600 dark:hover:text-blue-400 focus:outline-none focus:underline transition-colors">\n`;
+                    html += `                        ${title}\n`;
+                    html += `                    </a>\n`;
+                    html += `                </h3>\n`;
+                    html += `            </header>\n\n`;
+                    html += `            <div class="flex-grow mb-5">\n`;
+                    html += `                <p itemprop="description" class="text-gray-600 dark:text-gray-300 text-sm leading-relaxed line-clamp-3">\n`;
+                    html += `                    ${desc}\n`;
+                    html += `                </p>\n`;
+                    html += `            </div>\n\n`;
+                    html += `            <footer>\n`;
+                    if (tech.length > 0) {
+                        html += `                <div class="mb-6" aria-label="Technologies used">\n`;
+                        html += `                    <h4 class="sr-only">Built with</h4>\n`;
+                        html += `                    <div class="flex flex-wrap gap-2">\n`;
+                        tech.slice(0, 4).forEach(t => {
+                            html += `                        <span class="bg-blue-50 dark:bg-blue-900/40 text-blue-700 dark:text-blue-200 text-xs px-2.5 py-1 rounded-md font-semibold border border-blue-100 dark:border-blue-800" itemprop="applicationCategory">${t}</span>\n`;
+                        });
+                        if(tech.length > 4) {
+                            html += `                        <span class="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs px-2.5 py-1 rounded-md font-semibold border border-gray-200 dark:border-gray-600">+${tech.length - 4} more</span>\n`;
+                        }
+                        html += `                    </div>\n`;
+                        html += `                </div>\n`;
+                    }
+                    html += `                <a itemprop="url" href="/project_detail.html?id=${title}" \n                   class="inline-flex items-center justify-center w-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold py-3 px-5 rounded-lg transition-all focus:ring-4 focus:ring-blue-300 focus:outline-none" \n                     aria-label="View comprehensive details about ${title}">\n`;
+                    html += `                    View Project Details\n`;
+                    html += `                    <svg class="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>\n`;
+                    html += `                </a>\n`;
+                    html += `            </footer>\n`;
+                    html += `        </article>\n`;
+                });
+
+                html += `    </div>\n\n`;
+                html += `    <!-- Fallback message when dynamic filtering is applied and yields no results -->\n`;
+                html += `    <p id="noProjectsMessage" class="hidden-message text-lg text-gray-500 dark:text-gray-400 mt-8 text-center" aria-live="polite" style="display:none;">\n`;
+                html += `        No projects match your current filters.\n`;
+                html += `    </p>\n`;
+                html += `</section>\n`;
+
+                staticHtmlOutput.value = html;
+
+            } catch (e) {
+                console.error("Error generating static HTML: ", e);
+                staticHtmlOutput.value = 'Failed to fetch projects. Ensure you are logged in and check console for details.';
+            }
+        }
+        
+        copyStaticHtmlBtn.addEventListener('click', () => {
+            staticHtmlOutput.select();
+            navigator.clipboard.writeText(staticHtmlOutput.value)
+                .then(() => {
+                    const originalText = copyStaticHtmlBtn.textContent;
+                    copyStaticHtmlBtn.textContent = 'Copied!';
+                    copyStaticHtmlBtn.classList.replace('bg-green-500', 'bg-purple-500');
+                    setTimeout(() => {
+                        copyStaticHtmlBtn.textContent = originalText;
+                        copyStaticHtmlBtn.classList.replace('bg-purple-500', 'bg-green-500');
+                    }, 2000);
+                })
+                .catch(err => {
+                    console.error("Failed to copy text: ", err);
+                    alert("Failed to copy to clipboard.");
+                });
+        });
+
+        generateStaticBtn.addEventListener('click', fetchAndGenerateStaticHtml);
+        // ---------------------------------------------
+
         async function loadProjectData(projectName) {
             if (!projectName) {
                 alert("Please select a Project Name to load its data.");
@@ -364,7 +500,7 @@
                     document.getElementById('videoUrl').value = data.video_url || '';
                     document.getElementById('projectStatus').value = data.project_status || 'ongoing';
                     document.getElementById('difficulty').value = data.difficulty || 'Intermediate';
-                    document.getElementById('code').value = data.code || ''; // Now loads into textarea
+                    document.getElementById('code').value = data.code || '';
                     document.getElementById('buttonLabel').value = data.button_label || 'None';
                     document.getElementById('buttonUrl').value = data.button_url || '';
 
@@ -447,18 +583,17 @@
             }
         }
 
-
         // --- Event Listeners ---
         auth.onAuthStateChanged(user => {
             if (user) {
                 appContainer.classList.remove('hidden');
                 loginContainer.classList.add('hidden');
-                userEmailDisplay.textContent = user.email; // Display the email
+                userEmailDisplay.textContent = user.email;
                 setMode('add');
             } else {
                 appContainer.classList.add('hidden');
                 loginContainer.classList.remove('hidden');
-                userEmailDisplay.textContent = ''; // Clear the email
+                userEmailDisplay.textContent = '';
             }
         });
 
@@ -512,7 +647,7 @@
             const projectName = projectNameInput.value.trim();
             const shortDescription = document.getElementById('shortDescription').value.trim();
             const longDescription = document.getElementById('longDescription').value.trim();
-            const codeContent = document.getElementById('code').value.trim(); // Get content from textarea
+            const codeContent = document.getElementById('code').value.trim();
 
             if (!projectName) {
                 alert('Please enter a project name.');
@@ -528,7 +663,6 @@
                 alert('Please enter a long description.');
                 return;
             }
-
 
             const projectData = {
                 projectName: projectName,
@@ -546,7 +680,7 @@
                 sponsors: getDynamicValues(sponsorsContainer),
                 projectStatus: document.getElementById('projectStatus').value,
                 difficulty: document.getElementById('difficulty').value,
-                code: document.getElementById('code').value.trim(), // Use textarea content
+                code: document.getElementById('code').value.trim(),
                 buttonLabel: buttonLabelSelect.value,
                 buttonUrl: document.getElementById('buttonUrl').value.trim()
             };
@@ -601,7 +735,7 @@
                 sponsors: getDynamicValues(sponsorsContainer),
                 project_status: document.getElementById('projectStatus').value,
                 difficulty: document.getElementById('difficulty').value,
-                code: document.getElementById('code').value.trim(), // Use textarea content
+                code: document.getElementById('code').value.trim(),
                 button_label: buttonLabelSelect.value,
                 button_url: document.getElementById('buttonUrl').value.trim()
             };
